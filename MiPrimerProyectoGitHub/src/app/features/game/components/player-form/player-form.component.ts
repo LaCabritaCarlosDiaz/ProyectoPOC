@@ -33,8 +33,8 @@ import { GameService } from '../../../../core/services/game.service';
           <button
             type="submit"
             class="btn btn-submit"
-            [disabled]="!playerName().trim() || playersService.isNameTaken(playerName())">
-            ▶ Jugar
+            [disabled]="!playerName().trim() || playersService.isNameTaken(playerName()) || isValidating()">
+            {{ isValidating() ? '⏳ Validando...' : '▶ Jugar' }}
           </button>
         </form>
 
@@ -184,22 +184,30 @@ export class PlayerFormComponent {
   protected readonly gameService = inject(GameService);
   protected playerName = signal('');
   protected errorMessage = signal('');
+  protected isValidating = signal(false);
 
   onNameChange(value: string): void {
     this.playerName.set(value);
     this.errorMessage.set('');
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     const name = this.playerName().trim();
     if (!name) return;
 
-    if (this.playersService.isNameTaken(name)) {
+    this.isValidating.set(true);
+
+    // Chequear simultáneamente local y Firebase
+    const isTaken = await this.playersService.isNameTakenAsync(name);
+    if (isTaken) {
       this.errorMessage.set('Ese nombre ya existe, usa uno diferente.');
+      this.isValidating.set(false);
       return;
     }
 
     const created = this.playersService.setCurrentPlayer(name);
+    this.isValidating.set(false);
+
     if (!created) {
       this.errorMessage.set('No se pudo crear el jugador. Intenta con otro nombre.');
     }
