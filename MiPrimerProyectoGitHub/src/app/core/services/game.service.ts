@@ -1,13 +1,16 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import {
   Cell, Player, Difficulty, Winner, StatusModifier,
   WIN_COMBOS, BOARD_SIZE,
 } from '../models/game.types';
+import { PlayersService } from './players.service';
 
 const EMPTY_BOARD = (): Cell[] => Array(BOARD_SIZE).fill(null);
 
 @Injectable({ providedIn: 'root' })
 export class GameService {
+  private readonly playersService = inject(PlayersService);
+
   // ── Estado público ─────────────────────────────────────────────────────────
   readonly board = signal<Cell[]>(EMPTY_BOARD());
   readonly currentPlayer = signal<Player>('X');
@@ -148,6 +151,13 @@ export class GameService {
       this.resultConfirmed.set(true);
       if (player === 'X') this.scoreX.update(s => s + 1);
       else this.scoreO.update(s => s + 1);
+      
+      // Registrar resultado en PlayersService si es jugador humano
+      if (this.vsComputer() && player === 'X') {
+        this.playersService.recordGameResult('win', 'X');
+      } else if (this.vsComputer() && player === 'O') {
+        this.playersService.recordGameResult('loss', 'X');
+      }
       return true;
     }
     if (board.every(c => c !== null)) {
@@ -155,6 +165,11 @@ export class GameService {
       this.gameOver.set(true);
       this.resultConfirmed.set(true);
       this.scoreDraw.update(s => s + 1);
+      
+      // Registrar empate si es vs Computer
+      if (this.vsComputer()) {
+        this.playersService.recordGameResult('draw', 'X');
+      }
       return true;
     }
     return false;

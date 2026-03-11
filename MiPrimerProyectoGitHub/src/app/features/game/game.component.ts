@@ -1,40 +1,53 @@
 import { Component, inject, effect } from '@angular/core';
 import { GameService } from '../../core/services/game.service';
+import { PlayersService } from '../../core/services/players.service';
 import { MACHINE_DELAY_MS } from '../../core/models/game.types';
 import { GameBoardComponent } from './components/game-board/game-board.component';
 import { GameScoreboardComponent } from './components/game-scoreboard/game-scoreboard.component';
 import { GameControlsComponent } from './components/game-controls/game-controls.component';
 import { ResultModalComponent } from './components/result-modal/result-modal.component';
+import { PlayerFormComponent } from './components/player-form/player-form.component';
+import { LeaderboardComponent } from './components/leaderboard/leaderboard.component';
 
 @Component({
   selector: 'app-game',
-  imports: [GameBoardComponent, GameScoreboardComponent, GameControlsComponent, ResultModalComponent],
+  imports: [GameBoardComponent, GameScoreboardComponent, GameControlsComponent, ResultModalComponent, PlayerFormComponent, LeaderboardComponent],
   template: `
-    <div class="game-container">
-      <h1 class="title">Tic-Tac-Toe</h1>
+    @if (!players.currentPlayerId()) {
+      <app-player-form />
+    } @else {
+      <div class="game-container">
+        <h1 class="title">Tic-Tac-Toe</h1>
+        <p class="player-name">Jugador: {{ players.currentPlayer()?.name }}</p>
 
-      <div class="layout">
-        <!-- Panel izquierdo: tablero -->
-        <div class="panel-board">
-          <app-game-board />
-        </div>
+        <div class="layout">
+          <!-- Panel izquierdo: tablero -->
+          <div class="panel-board">
+            <app-game-board />
+          </div>
 
-        <!-- Panel derecho: controles, marcador y estado -->
-        <div class="panel-controls">
-          <app-game-controls />
-          <app-game-scoreboard />
+          <!-- Panel derecho: controles, marcador y estado -->
+          <div class="panel-controls">
+            <app-game-controls />
+            <app-game-scoreboard />
 
-          <!-- Mensaje de estado del juego -->
-          <div [class]="'status-message status-' + game.statusModifier()"
-               role="status"
-               aria-live="polite">
-            {{ game.statusMessage() }}
+            <!-- Mensaje de estado del juego -->
+            <div [class]="'status-message status-' + game.statusModifier()"
+                 role="status"
+                 aria-live="polite">
+              {{ game.statusMessage() }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <app-result-modal />
+      <app-result-modal />
+
+      <!-- Leaderboard -->
+      <div class="leaderboard-section">
+        <app-leaderboard />
+      </div>
+    }
   `,
   styles: [`
     :host {
@@ -177,10 +190,24 @@ import { ResultModalComponent } from './components/result-modal/result-modal.com
       :host { padding: 0.75rem 0.5rem; }
       .game-container { gap: 0.75rem; }
     }
+
+    .player-name {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: clamp(0.85rem, 2.5vw, 1rem);
+      margin: -0.5rem 0 0.5rem 0;
+      font-weight: 600;
+    }
+
+    .leaderboard-section {
+      width: 100%;
+      padding: 0 1rem 2rem 1rem;
+      animation: fadeIn 0.5s ease 0.2s backwards;
+    }
   `]
 })
 export class GameComponent {
   protected readonly game = inject(GameService);
+  protected readonly players = inject(PlayersService);
 
   constructor() {
     // El retardo de UX para el turno de la máquina se gestiona aquí,
