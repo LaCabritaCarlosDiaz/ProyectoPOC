@@ -22,10 +22,11 @@ export class PlayersService {
   });
 
   readonly worstPlayers = computed(() => {
+    const topIds = new Set(this.topPlayers().map(p => p.id));
     const allPlayers = Array.from(this.players().values());
     return allPlayers
+      .filter(p => p.totalGames >= 3 && !topIds.has(p.id))
       .sort((a, b) => a.rating - b.rating)
-      .filter(p => p.totalGames >= 3)
       .slice(0, 5);
   });
 
