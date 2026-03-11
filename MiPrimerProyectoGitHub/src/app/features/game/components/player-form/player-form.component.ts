@@ -18,25 +18,28 @@ import { GameService } from '../../../../core/services/game.service';
             <input
               type="text"
               [ngModel]="playerName()"
-              (ngModelChange)="playerName.set($event)"
+              (ngModelChange)="onNameChange($event)"
               name="playerName"
               class="input-field"
               placeholder="Tu nombre"
               required
               autofocus
               (keyup.enter)="onSubmit()">
+            @if (errorMessage()) {
+              <p class="form-error">{{ errorMessage() }}</p>
+            }
           </div>
 
           <button
             type="submit"
             class="btn btn-submit"
-            [disabled]="!playerName().trim()">
+            [disabled]="!playerName().trim() || playersService.isNameTaken(playerName())">
             ▶ Jugar
           </button>
         </form>
 
         <p class="modal-hint">
-          Si ya jugaste antes, usa el mismo nombre para continuar tu historial
+          El nombre debe ser unico. Si ya existe, elige otro.
         </p>
       </div>
     </div>
@@ -128,6 +131,13 @@ import { GameService } from '../../../../core/services/game.service';
       color: rgba(255, 255, 255, 0.4);
     }
 
+    .form-error {
+      color: #ff7b7b;
+      font-size: 0.85rem;
+      margin: 0.25rem 0 0 0;
+      text-align: left;
+    }
+
     .btn-submit {
       padding: 0.9rem 1.5rem;
       background: linear-gradient(135deg, #e94560, #c62a47);
@@ -173,11 +183,25 @@ export class PlayerFormComponent {
   protected readonly playersService = inject(PlayersService);
   protected readonly gameService = inject(GameService);
   protected playerName = signal('');
+  protected errorMessage = signal('');
+
+  onNameChange(value: string): void {
+    this.playerName.set(value);
+    this.errorMessage.set('');
+  }
 
   onSubmit(): void {
     const name = this.playerName().trim();
     if (!name) return;
 
-    this.playersService.setCurrentPlayer(name);
+    if (this.playersService.isNameTaken(name)) {
+      this.errorMessage.set('Ese nombre ya existe, usa uno diferente.');
+      return;
+    }
+
+    const created = this.playersService.setCurrentPlayer(name);
+    if (!created) {
+      this.errorMessage.set('No se pudo crear el jugador. Intenta con otro nombre.');
+    }
   }
 }
