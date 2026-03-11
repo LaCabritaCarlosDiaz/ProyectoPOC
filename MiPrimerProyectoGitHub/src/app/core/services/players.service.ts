@@ -46,10 +46,28 @@ export class PlayersService {
       .slice(0, 5);
   });
 
+  private firebaseLoaded = signal(false);
+
   constructor() {
-    this.loadFromLocalStorage();
     this.loadFromShareUrl();
-    this.loadFromFirestore();
+    // Cargar desde Firestore primero (es la fuente de verdad global)
+    // Si falla, fallback a localStorage
+    this.initializeDataLoading();
+  }
+
+  private async initializeDataLoading(): Promise<void> {
+    try {
+      await this.loadFromFirestore();
+    } catch (e) {
+      console.error('Firebase loading failed, falling back to localStorage', e);
+      this.loadFromLocalStorage();
+    }
+    
+    if (this.players().size === 0) {
+      this.loadFromLocalStorage();
+    }
+    
+    this.firebaseLoaded.set(true);
   }
 
   createShareUrl(): string {
@@ -190,11 +208,20 @@ export class PlayersService {
 
     try {
       const parsed = JSON.parse(data);
-      this.players.set(new Map(parsed.players));
-      // currentPlayerId siempre arranca en null → el form siempre pide el nombre
+      const localMap = new Map<string, Player>(parsed.players || []);
+      
+      // Fusionar: Firebase es base, añadir locales que no están en Firebase
+      const current = new Map(this.players());
+      for (const [id, localPlayer] of localMap) {
+        if (!current.has(id)) {
+          current.set(id, localPlayer);
+        }
+      }
+      
+      this.players.set(current);
       this.gameHistory.set(parsed.gameHistory || []);
 
-      if (this.players().size === 0) {
+      if (current.size === 0) {
         this.loadTopSnapshotFallback();
       }
     } catch (e) {
@@ -347,16 +374,19 @@ export class PlayersService {
       const topFromFirebase = await this.syncService.getTopPlayers(30);
       if (topFromFirebase.length === 0) return;
 
-      // Fusionar datos de Firebase con los locales (locales prevalecen si existen)
-      const mergedMap = new Map(this.players());
+      // Firebase es la fuente de verdad: reemplazar todos los datos con lo que viene de Firebase
+      const firebaseMap = new Map<string, Player>();
       for (const fbPlayer of topFromFirebase) {
-        if (!mergedMap.has(fbPlayer.id)) {
-          mergedMap.set(fbPlayer.id, fbPlayer);
-        }
+        firebaseMap.set(fbPlayer.id, fbPlayer);
       }
-      this.players.set(mergedMap);
+      
+      this.players.set(firebaseMap);
+      this.gameHistory.set([]);
+      
+      console.log('Loaded top players from Firestore:', topFromFirebase.length);
     } catch (e) {
       console.error('Error loading top from Firestore', e);
+      throw e;
     }
   }
 }
