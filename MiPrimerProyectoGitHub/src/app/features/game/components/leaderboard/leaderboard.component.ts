@@ -24,14 +24,14 @@ import { PlayersService } from '../../../../core/services/players.service';
             } @else {
               <div class="ranking-row header">
                 <span class="rank">#</span>
-                <span class="name">Jugador</span>
-                <span class="stat">G+E</span>
-                <span class="stat">PW</span>
+                <span class="player-name">Jugador</span>
+                <span class="stat">Rating</span>
+                <span class="stat">Wins</span>
               </div>
               @for (player of players.topPlayers(); track player.id; let i = $index) {
                 <div class="ranking-row">
                   <span class="rank medal">{{ getMedal(i) }}</span>
-                  <span class="name">{{ player.name }}</span>
+                  <span class="player-name">{{ player.name }}</span>
                   <span class="stat rating">{{ player.rating }}</span>
                   <span class="stat wins">{{ player.score }}</span>
                 </div>
@@ -52,14 +52,14 @@ import { PlayersService } from '../../../../core/services/players.service';
             } @else {
               <div class="ranking-row header">
                 <span class="rank">#</span>
-                <span class="name">Jugador</span>
+                <span class="player-name">Jugador</span>
                 <span class="stat">Rating</span>
-                <span class="stat">Perdidas</span>
+                <span class="stat">Pérdidas</span>
               </div>
               @for (player of players.worstPlayers(); track player.id; let i = $index) {
                 <div class="ranking-row">
                   <span class="rank">{{ i + 1 }}</span>
-                  <span class="name">{{ player.name }}</span>
+                  <span class="player-name">{{ player.name }}</span>
                   <span class="stat rating">{{ player.rating }}</span>
                   <span class="stat losses">{{ player.losses }}</span>
                 </div>
@@ -153,16 +153,19 @@ import { PlayersService } from '../../../../core/services/players.service';
 
     .highlight-name {
       margin: 0 0 0.75rem 0;
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 0.9rem;
-      font-weight: 600;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.4rem 0.75rem;
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
     }
 
     .ranking-row {
       display: grid;
-      grid-template-columns: 40px 1fr 60px 60px;
-      gap: 0.75rem;
-      padding: 0.8rem;
+      grid-template-columns: 36px 1fr 58px 58px;
+      gap: 0.5rem;
+      padding: 0.75rem 0.6rem;
       align-items: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.9rem;
@@ -192,12 +195,12 @@ import { PlayersService } from '../../../../core/services/players.service';
       font-size: 1.2rem;
     }
 
-    .name {
+    .player-name {
       color: #fff;
       font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      min-width: 0;
     }
 
     .stat {
@@ -245,14 +248,14 @@ import { PlayersService } from '../../../../core/services/players.service';
       }
 
       .ranking-row {
-        grid-template-columns: 30px 1fr 50px 50px;
-        gap: 0.5rem;
-        padding: 0.6rem;
+        grid-template-columns: 28px 1fr 46px 46px;
+        gap: 0.4rem;
+        padding: 0.6rem 0.5rem;
         font-size: 0.85rem;
       }
 
       .ranking-row.header {
-        padding: 0.5rem 0.6rem;
+        padding: 0.5rem;
         font-size: 0.75rem;
       }
     }
