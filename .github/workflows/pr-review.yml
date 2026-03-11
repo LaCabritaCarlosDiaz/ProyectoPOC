@@ -46,6 +46,6 @@ jobs:
       - name: Auto-merge PR if review passed
         if: success()
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+          gh pr merge ${{ github.event.pull_request.number }} --squash --delete-branch || echo "Auto-merge sin opción --auto"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
