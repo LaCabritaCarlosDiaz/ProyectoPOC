@@ -24,6 +24,11 @@ export class PlayersService {
   readonly gameHistory = signal<GameRecord[]>([]);
   readonly sharedLeaderboardLoaded = signal(false);
   private readonly syncService = inject(LeaderboardSyncService);
+  
+  // Caché de búsquedas para evitar llamadas repetidas a Firebase
+  private nameCheckCache = new Map<string, boolean>();
+  private cacheTimestamp = 0;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
   readonly currentPlayer = computed(() => {
     const id = this.currentPlayerId();
@@ -46,10 +51,28 @@ export class PlayersService {
       .slice(0, 5);
   });
 
+  private firebaseLoaded = signal(false);
+
   constructor() {
-    this.loadFromLocalStorage();
     this.loadFromShareUrl();
-    this.loadFromFirestore();
+    // Cargar desde Firestore primero (es la fuente de verdad global)
+    // Si falla, fallback a localStorage
+    this.initializeDataLoading();
+  }
+
+  private async initializeDataLoading(): Promise<void> {
+    try {
+      await this.loadFromFirestore();
+    } catch (e) {
+      console.error('Firebase loading failed, falling back to localStorage', e);
+      this.loadFromLocalStorage();
+    }
+    
+    if (this.players().size === 0) {
+      this.loadFromLocalStorage();
+    }
+    
+    this.firebaseLoaded.set(true);
   }
 
   createShareUrl(): string {
@@ -104,8 +127,39 @@ export class PlayersService {
     const localFound = this.findPlayerByName(name);
     if (localFound) return true;
 
-    const firebaseFound = await this.syncService.findPlayerByName(name);
-    return Boolean(firebaseFound);
+    const normalizedName = this.normalizeName(name);
+    const cacheKey = normalizedName.toLowerCase();
+    
+    // Revisar caché
+    const now = Date.now();
+    if (this.cacheTimestamp + this.CACHE_TTL > now && this.nameCheckCache.has(cacheKey)) {
+      return this.nameCheckCache.get(cacheKey)!;
+    }
+
+    // Si el caché expiró, limpiar
+    if (this.cacheTimestamp + this.CACHE_TTL <= now) {
+      this.nameCheckCache.clear();
+      this.cacheTimestamp = now;
+    }
+
+    try {
+      // Timeout de 3 segundos para Firebase (evita esperas largas)
+      const firebasePromise = this.syncService.findPlayerByName(name);
+      const timeoutPromise = new Promise<null>((resolve) => 
+        setTimeout(() => resolve(null), 3000)
+      );
+
+      const result = await Promise.race([firebasePromise, timeoutPromise]);
+      const isTaken = Boolean(result);
+      
+      // Guardar en caché
+      this.nameCheckCache.set(cacheKey, isTaken);
+      return isTaken;
+    } catch (e) {
+      console.error('Error checking name in Firestore', e);
+      // Si hay error, asumir que está disponible para no bloquear al usuario
+      return false;
+    }
   }
 
   recordGameResult(result: 'win' | 'loss' | 'draw', playerSymbol: 'X' | 'O'): void {
@@ -190,11 +244,20 @@ export class PlayersService {
 
     try {
       const parsed = JSON.parse(data);
-      this.players.set(new Map(parsed.players));
-      // currentPlayerId siempre arranca en null → el form siempre pide el nombre
+      const localMap = new Map<string, Player>(parsed.players || []);
+      
+      // Fusionar: Firebase es base, añadir locales que no están en Firebase
+      const current = new Map(this.players());
+      for (const [id, localPlayer] of localMap) {
+        if (!current.has(id)) {
+          current.set(id, localPlayer);
+        }
+      }
+      
+      this.players.set(current);
       this.gameHistory.set(parsed.gameHistory || []);
 
-      if (this.players().size === 0) {
+      if (current.size === 0) {
         this.loadTopSnapshotFallback();
       }
     } catch (e) {
@@ -347,16 +410,19 @@ export class PlayersService {
       const topFromFirebase = await this.syncService.getTopPlayers(30);
       if (topFromFirebase.length === 0) return;
 
-      // Fusionar datos de Firebase con los locales (locales prevalecen si existen)
-      const mergedMap = new Map(this.players());
+      // Firebase es la fuente de verdad: reemplazar todos los datos con lo que viene de Firebase
+      const firebaseMap = new Map<string, Player>();
       for (const fbPlayer of topFromFirebase) {
-        if (!mergedMap.has(fbPlayer.id)) {
-          mergedMap.set(fbPlayer.id, fbPlayer);
-        }
+        firebaseMap.set(fbPlayer.id, fbPlayer);
       }
-      this.players.set(mergedMap);
+      
+      this.players.set(firebaseMap);
+      this.gameHistory.set([]);
+      
+      console.log('Loaded top players from Firestore:', topFromFirebase.length);
     } catch (e) {
       console.error('Error loading top from Firestore', e);
+      throw e;
     }
   }
 }
