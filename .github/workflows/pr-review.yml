@@ -51,4 +51,3 @@ jobs:
               repo: context.repo.repo,
               body: '✅ **Build verificado exitosamente**\n\n- ✅ Dependencias instaladas\n- ✅ Build de Angular completado\n\n_Revisión automática completada_'
             });
-
