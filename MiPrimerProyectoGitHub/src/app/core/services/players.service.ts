@@ -112,9 +112,9 @@ export class PlayersService {
   }
 
   private saveToLocalStorage(): void {
+    // currentPlayerId NO se persiste: cada nueva visita/pestaña es un jugador nuevo
     const data = {
       players: Array.from(this.players().entries()),
-      currentPlayerId: this.currentPlayerId(),
       gameHistory: this.gameHistory(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -127,7 +127,7 @@ export class PlayersService {
     try {
       const parsed = JSON.parse(data);
       this.players.set(new Map(parsed.players));
-      this.currentPlayerId.set(parsed.currentPlayerId);
+      // currentPlayerId siempre arranca en null → el form siempre pide el nombre
       this.gameHistory.set(parsed.gameHistory || []);
     } catch (e) {
       console.error('Error loading players from localStorage', e);

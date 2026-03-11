@@ -18,7 +18,10 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
     } @else {
       <div class="game-container">
         <h1 class="title">Tic-Tac-Toe</h1>
-        <p class="player-name">Jugador: {{ players.currentPlayer()?.name }}</p>
+        <div class="player-badge">
+          <span class="player-avatar">👤</span>
+          <span class="player-name">{{ players.currentPlayer()?.name }}</span>
+        </div>
 
         <div class="layout">
           <!-- Panel izquierdo: tablero -->
@@ -191,11 +194,26 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
       .game-container { gap: 0.75rem; }
     }
 
+    .player-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(233, 69, 96, 0.15);
+      border: 1px solid rgba(233, 69, 96, 0.4);
+      border-radius: 20px;
+      padding: 0.35rem 1rem;
+      margin: -0.25rem 0 0.25rem 0;
+    }
+
+    .player-avatar {
+      font-size: 1rem;
+    }
+
     .player-name {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: clamp(0.85rem, 2.5vw, 1rem);
-      margin: -0.5rem 0 0.5rem 0;
-      font-weight: 600;
+      color: #e94560;
+      font-size: clamp(0.9rem, 2.5vw, 1.05rem);
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
 
     .leaderboard-section {
