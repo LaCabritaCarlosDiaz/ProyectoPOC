@@ -22,7 +22,6 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
           <span class="player-avatar">👤</span>
           <span class="player-name">{{ players.currentPlayer()?.name }}</span>
         </div>
-
         <div class="layout">
           <!-- Panel izquierdo: tablero -->
           <div class="panel-board">
@@ -33,7 +32,6 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
           <div class="panel-controls">
             <app-game-controls />
             <app-game-scoreboard />
-
             <!-- Mensaje de estado del juego -->
             <div [class]="'status-message status-' + game.statusModifier()"
                  role="status"
