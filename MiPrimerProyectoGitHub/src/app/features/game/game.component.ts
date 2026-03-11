@@ -13,38 +13,36 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
   selector: 'app-game',
   imports: [GameBoardComponent, GameScoreboardComponent, GameControlsComponent, ResultModalComponent, PlayerFormComponent, LeaderboardComponent],
   template: `
-    @if (!players.currentPlayerId() && !players.sharedLeaderboardLoaded()) {
+    @if (!players.currentPlayerId()) {
       <app-player-form />
     } @else {
-      @if (players.currentPlayerId()) {
-        <div class="game-container">
-          <h1 class="title">Tic-Tac-Toe</h1>
-          <div class="player-badge">
-            <span class="player-avatar">👤</span>
-            <span class="player-name">{{ players.currentPlayer()?.name }}</span>
+      <div class="game-container">
+        <h1 class="title">Tic-Tac-Toe</h1>
+        <div class="player-badge">
+          <span class="player-avatar">👤</span>
+          <span class="player-name">{{ players.currentPlayer()?.name }}</span>
+        </div>
+        <div class="layout">
+          <!-- Panel izquierdo: tablero -->
+          <div class="panel-board">
+            <app-game-board />
           </div>
-          <div class="layout">
-            <!-- Panel izquierdo: tablero -->
-            <div class="panel-board">
-              <app-game-board />
-            </div>
 
-            <!-- Panel derecho: controles, marcador y estado -->
-            <div class="panel-controls">
-              <app-game-controls />
-              <app-game-scoreboard />
-              <!-- Mensaje de estado del juego -->
-              <div [class]="'status-message status-' + game.statusModifier()"
-                   role="status"
-                   aria-live="polite">
-                {{ game.statusMessage() }}
-              </div>
+          <!-- Panel derecho: controles, marcador y estado -->
+          <div class="panel-controls">
+            <app-game-controls />
+            <app-game-scoreboard />
+            <!-- Mensaje de estado del juego -->
+            <div [class]="'status-message status-' + game.statusModifier()"
+                 role="status"
+                 aria-live="polite">
+              {{ game.statusMessage() }}
             </div>
           </div>
         </div>
+      </div>
 
-        <app-result-modal />
-      }
+      <app-result-modal />
 
       <!-- Leaderboard -->
       <div class="leaderboard-section">
