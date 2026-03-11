@@ -128,7 +128,7 @@ import { PlayersService } from '../../../../core/services/players.service';
       gap: 0.4rem;
     }
 
-    /* Fila: medalla | nombre (flexible) | badge rating | badge stat */
+    /* Fila: medalla | nombre (flexible) | badges de stats */
     .ranking-row {
       display: flex;
       align-items: center;
