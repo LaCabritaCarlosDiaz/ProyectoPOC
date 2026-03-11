@@ -8,80 +8,65 @@ import { PlayersService } from '../../../../core/services/players.service';
     <div class="leaderboard-container">
       <div class="leaderboard-header">
         <h2 class="leaderboard-title">🏆 Ranking de Jugadores</h2>
-        <p class="leaderboard-subtitle">Desde que levantó la app</p>
+        <p class="leaderboard-subtitle">Estadísticas acumuladas en esta app</p>
       </div>
 
       <div class="rankings">
+
         <!-- Top 5 Mejores -->
         <div class="ranking-section top">
           <h3 class="ranking-title">⭐ Top 5 Mejores</h3>
-          @if (players.topPlayers().length > 0) {
-            <p class="highlight-name">Mejor jugador: {{ players.topPlayers()[0].name }}</p>
-          }
-          <div class="ranking-list">
-            @if (players.topPlayers().length === 0) {
-              <p class="empty-message">Sin jugadores aún</p>
-            } @else {
-              <div class="ranking-row header">
-                <span class="rank">#</span>
-                <span class="name">Jugador</span>
-                <span class="stat">G+E</span>
-                <span class="stat">PW</span>
-              </div>
+          @if (players.topPlayers().length === 0) {
+            <p class="empty-message">Sin jugadores aún</p>
+          } @else {
+            <div class="ranking-list">
               @for (player of players.topPlayers(); track player.id; let i = $index) {
-                <div class="ranking-row">
-                  <span class="rank medal">{{ getMedal(i) }}</span>
-                  <span class="name">{{ player.name }}</span>
-                  <span class="stat rating">{{ player.rating }}</span>
-                  <span class="stat wins">{{ player.score }}</span>
+                <div class="ranking-row" [class.first]="i === 0">
+                  <span class="medal">{{ getMedal(i) }}</span>
+                  <span class="pname">{{ player.name }}</span>
+                  <span class="badge rating">{{ player.rating }}</span>
+                  <span class="badge wins">{{ player.score }}W</span>
                 </div>
               }
-            }
-          </div>
+            </div>
+          }
         </div>
 
         <!-- Top Peores -->
         <div class="ranking-section bottom">
           <h3 class="ranking-title">📉 Top Peores</h3>
-          @if (players.worstPlayers().length > 0) {
-            <p class="highlight-name">Peor jugador: {{ players.worstPlayers()[0].name }}</p>
-          }
-          <div class="ranking-list">
-            @if (players.worstPlayers().length === 0) {
-              <p class="empty-message">Sin datos suficientes</p>
-            } @else {
-              <div class="ranking-row header">
-                <span class="rank">#</span>
-                <span class="name">Jugador</span>
-                <span class="stat">Rating</span>
-                <span class="stat">Perdidas</span>
-              </div>
+          @if (players.worstPlayers().length === 0) {
+            <p class="empty-message">Mínimo 3 partidas para aparecer</p>
+          } @else {
+            <div class="ranking-list">
               @for (player of players.worstPlayers(); track player.id; let i = $index) {
-                <div class="ranking-row">
-                  <span class="rank">{{ i + 1 }}</span>
-                  <span class="name">{{ player.name }}</span>
-                  <span class="stat rating">{{ player.rating }}</span>
-                  <span class="stat losses">{{ player.losses }}</span>
+                <div class="ranking-row" [class.first]="i === 0">
+                  <span class="medal">{{ i + 1 }}</span>
+                  <span class="pname">{{ player.name }}</span>
+                  <span class="badge rating">{{ player.rating }}</span>
+                  <span class="badge losses">{{ player.losses }}P</span>
                 </div>
               }
-            }
-          </div>
+            </div>
+          }
         </div>
+
       </div>
 
       <div class="leaderboard-footer">
-        <p class="stats-info">
-          💡 Rating = (Ganadas × 2) + (Empatadas × 1) - (Perdidas × 0.5)
-        </p>
+        <p class="stats-info">💡 Rating = Ganadas×2 + Empatadas×1 − Perdidas×0.5</p>
       </div>
     </div>
   `,
   styles: [`
+    :host { display: block; width: 100%; box-sizing: border-box; }
+
     .leaderboard-container {
       width: 100%;
       max-width: 900px;
       margin: 0 auto;
       padding: 1.5rem;
+      box-sizing: border-box;
       background: rgba(255, 255, 255, 0.02);
       border-radius: 16px;
       border: 1px solid rgba(233, 69, 96, 0.1);
@@ -89,27 +74,27 @@ import { PlayersService } from '../../../../core/services/players.service';
 
     .leaderboard-header {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     .leaderboard-title {
-      font-size: clamp(1.5rem, 4vw, 1.8rem);
+      font-size: clamp(1.3rem, 4vw, 1.8rem);
       font-weight: 800;
       color: #e94560;
-      margin: 0 0 0.5rem 0;
-      text-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+      margin: 0 0 0.4rem 0;
     }
 
     .leaderboard-subtitle {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.85rem;
       margin: 0;
     }
 
+    /* PC: 2 columnas; móvil: 1 columna cuando no caben */
     .rankings {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
       margin-bottom: 1.5rem;
     }
 
@@ -117,161 +102,104 @@ import { PlayersService } from '../../../../core/services/players.service';
       background: rgba(255, 255, 255, 0.03);
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 1.5rem;
-      overflow: hidden;
+      padding: 1.25rem;
+      box-sizing: border-box;
     }
 
-    .ranking-section.top {
-      border-color: rgba(46, 213, 115, 0.2);
-    }
-
-    .ranking-section.bottom {
-      border-color: rgba(233, 69, 96, 0.2);
-    }
+    .ranking-section.top   { border-color: rgba(46, 213, 115, 0.25); }
+    .ranking-section.bottom { border-color: rgba(233, 69, 96, 0.25); }
 
     .ranking-title {
-      font-size: 1.1rem;
+      font-size: clamp(0.95rem, 2.5vw, 1.1rem);
       font-weight: 700;
-      margin: 0 0 1rem 0;
-      padding-bottom: 0.75rem;
+      margin: 0 0 0.85rem 0;
+      padding-bottom: 0.6rem;
       border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     }
 
-    .ranking-section.top .ranking-title {
-      color: #2ed573;
-    }
-
-    .ranking-section.bottom .ranking-title {
-      color: #e94560;
-    }
+    .ranking-section.top .ranking-title    { color: #2ed573; }
+    .ranking-section.bottom .ranking-title { color: #e94560; }
 
     .ranking-list {
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: 0.4rem;
     }
 
-    .highlight-name {
-      margin: 0 0 0.75rem 0;
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
+    /* Fila: medalla | nombre (flexible) | badge rating | badge stat */
     .ranking-row {
-      display: grid;
-      grid-template-columns: 40px 1fr 60px 60px;
-      gap: 0.75rem;
-      padding: 0.8rem;
+      display: flex;
       align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.9rem;
+      gap: 0.6rem;
+      padding: 0.55rem 0.5rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
     }
 
-    .ranking-row.header {
-      background: rgba(255, 255, 255, 0.05);
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.7);
-      padding: 0.6rem 0.8rem;
-      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .ranking-row.first {
+      background: rgba(255, 255, 255, 0.08);
     }
 
-    .ranking-row:last-child {
-      border-bottom: none;
-    }
-
-    .rank {
-      font-weight: 700;
+    .medal {
+      flex: 0 0 1.8rem;
       text-align: center;
+      font-size: 1.1rem;
+      line-height: 1;
     }
 
-    .rank.medal {
-      font-size: 1.2rem;
-    }
-
-    .name {
+    /* El nombre se expande y permite wrap */
+    .pname {
+      flex: 1 1 0;
+      min-width: 0;
       color: #fff;
       font-weight: 600;
+      font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+    }
+
+    .ranking-row.first .pname {
+      font-size: clamp(0.85rem, 2.8vw, 1rem);
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+      font-weight: 700;
+      padding: 0.2rem 0.45rem;
+      border-radius: 6px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .stat {
-      text-align: center;
-      color: rgba(255, 255, 255, 0.8);
-      font-weight: 600;
-    }
-
-    .stat.rating {
-      color: #ffa502;
-    }
-
-    .stat.wins {
-      color: #2ed573;
-    }
-
-    .stat.losses {
-      color: #e94560;
-    }
+    .badge.rating { background: rgba(255, 165, 2, 0.15);  color: #ffa502; }
+    .badge.wins   { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
+    .badge.losses { background: rgba(233, 69, 96, 0.15);  color: #e94560; }
 
     .empty-message {
       text-align: center;
-      color: rgba(255, 255, 255, 0.5);
-      padding: 2rem 1rem;
+      color: rgba(255, 255, 255, 0.4);
+      padding: 1.5rem 0;
       font-style: italic;
+      font-size: 0.9rem;
     }
 
     .leaderboard-footer {
       text-align: center;
       padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .stats-info {
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.8rem;
       margin: 0;
-      line-height: 1.5;
     }
 
-    @media (max-width: 768px) {
-      .rankings {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-
-      .ranking-row {
-        grid-template-columns: 30px 1fr 50px 50px;
-        gap: 0.5rem;
-        padding: 0.6rem;
-        font-size: 0.85rem;
-      }
-
-      .ranking-row.header {
-        padding: 0.5rem 0.6rem;
-        font-size: 0.75rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .leaderboard-container {
-        padding: 1rem;
-      }
-
-      .ranking-row {
-        grid-template-columns: 25px 1fr 40px 40px;
-        gap: 0.3rem;
-        padding: 0.5rem;
-        font-size: 0.8rem;
-      }
-
-      .ranking-title {
-        font-size: 1rem;
-      }
+    @media (max-width: 600px) {
+      .leaderboard-container { padding: 1rem 0.75rem; }
+      .rankings { grid-template-columns: 1fr; gap: 1rem; }
+      .ranking-section { padding: 1rem; }
     }
   `]
 })
@@ -279,7 +207,6 @@ export class LeaderboardComponent {
   protected readonly players = inject(PlayersService);
 
   getMedal(index: number): string {
-    const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-    return medals[index] || '•';
+    return ['🥇', '🥈', '🥉', '4', '5'][index] ?? '•';
   }
 }
