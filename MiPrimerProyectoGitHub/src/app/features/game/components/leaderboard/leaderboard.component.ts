@@ -15,6 +15,9 @@ import { PlayersService } from '../../../../core/services/players.service';
         <!-- Top 5 Mejores -->
         <div class="ranking-section top">
           <h3 class="ranking-title">⭐ Top 5 Mejores</h3>
+          @if (players.topPlayers().length > 0) {
+            <p class="highlight-name">Mejor jugador: {{ players.topPlayers()[0].name }}</p>
+          }
           <div class="ranking-list">
             @if (players.topPlayers().length === 0) {
               <p class="empty-message">Sin jugadores aún</p>
@@ -40,6 +43,9 @@ import { PlayersService } from '../../../../core/services/players.service';
         <!-- Top Peores -->
         <div class="ranking-section bottom">
           <h3 class="ranking-title">📉 Top Peores</h3>
+          @if (players.worstPlayers().length > 0) {
+            <p class="highlight-name">Peor jugador: {{ players.worstPlayers()[0].name }}</p>
+          }
           <div class="ranking-list">
             @if (players.worstPlayers().length === 0) {
               <p class="empty-message">Sin datos suficientes</p>
@@ -143,6 +149,13 @@ import { PlayersService } from '../../../../core/services/players.service';
       display: flex;
       flex-direction: column;
       gap: 0;
+    }
+
+    .highlight-name {
+      margin: 0 0 0.75rem 0;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.9rem;
+      font-weight: 600;
     }
 
     .ranking-row {

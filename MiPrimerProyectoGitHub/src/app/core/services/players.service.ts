@@ -33,29 +33,34 @@ export class PlayersService {
     this.loadFromLocalStorage();
   }
 
-  setCurrentPlayer(name: string): void {
-    let id = this.findPlayerByName(name);
-    
-    if (!id) {
-      id = this.generatePlayerId();
-      const newPlayer: Player = {
-        id,
-        name,
-        winsX: 0,
-        winsO: 0,
-        draws: 0,
-        losses: 0,
-        totalGames: 0,
-        score: 0,
-        rating: 0,
-      };
-      const map = new Map(this.players());
-      map.set(id, newPlayer);
-      this.players.set(map);
-    }
+  setCurrentPlayer(name: string): boolean {
+    const normalizedName = this.normalizeName(name);
+    if (!normalizedName) return false;
+    if (this.isNameTaken(normalizedName)) return false;
+
+    const id = this.generatePlayerId();
+    const newPlayer: Player = {
+      id,
+      name: normalizedName,
+      winsX: 0,
+      winsO: 0,
+      draws: 0,
+      losses: 0,
+      totalGames: 0,
+      score: 0,
+      rating: 0,
+    };
+    const map = new Map(this.players());
+    map.set(id, newPlayer);
+    this.players.set(map);
 
     this.currentPlayerId.set(id);
     this.saveToLocalStorage();
+    return true;
+  }
+
+  isNameTaken(name: string): boolean {
+    return Boolean(this.findPlayerByName(name));
   }
 
   recordGameResult(result: 'win' | 'loss' | 'draw', playerSymbol: 'X' | 'O'): void {
@@ -99,12 +104,17 @@ export class PlayersService {
   }
 
   private findPlayerByName(name: string): string | undefined {
+    const normalizedTarget = this.normalizeName(name);
     for (const [id, player] of this.players()) {
-      if (player.name.toLowerCase() === name.toLowerCase()) {
+      if (this.normalizeName(player.name) === normalizedTarget) {
         return id;
       }
     }
     return undefined;
+  }
+
+  private normalizeName(name: string): string {
+    return name.trim().replace(/\s+/g, ' ');
   }
 
   private generatePlayerId(): string {
