@@ -24,6 +24,11 @@ export class PlayersService {
   readonly gameHistory = signal<GameRecord[]>([]);
   readonly sharedLeaderboardLoaded = signal(false);
   private readonly syncService = inject(LeaderboardSyncService);
+  
+  // Caché de búsquedas para evitar llamadas repetidas a Firebase
+  private nameCheckCache = new Map<string, boolean>();
+  private cacheTimestamp = 0;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
   readonly currentPlayer = computed(() => {
     const id = this.currentPlayerId();
@@ -122,8 +127,39 @@ export class PlayersService {
     const localFound = this.findPlayerByName(name);
     if (localFound) return true;
 
-    const firebaseFound = await this.syncService.findPlayerByName(name);
-    return Boolean(firebaseFound);
+    const normalizedName = this.normalizeName(name);
+    const cacheKey = normalizedName.toLowerCase();
+    
+    // Revisar caché
+    const now = Date.now();
+    if (this.cacheTimestamp + this.CACHE_TTL > now && this.nameCheckCache.has(cacheKey)) {
+      return this.nameCheckCache.get(cacheKey)!;
+    }
+
+    // Si el caché expiró, limpiar
+    if (this.cacheTimestamp + this.CACHE_TTL <= now) {
+      this.nameCheckCache.clear();
+      this.cacheTimestamp = now;
+    }
+
+    try {
+      // Timeout de 3 segundos para Firebase (evita esperas largas)
+      const firebasePromise = this.syncService.findPlayerByName(name);
+      const timeoutPromise = new Promise<null>((resolve) => 
+        setTimeout(() => resolve(null), 3000)
+      );
+
+      const result = await Promise.race([firebasePromise, timeoutPromise]);
+      const isTaken = Boolean(result);
+      
+      // Guardar en caché
+      this.nameCheckCache.set(cacheKey, isTaken);
+      return isTaken;
+    } catch (e) {
+      console.error('Error checking name in Firestore', e);
+      // Si hay error, asumir que está disponible para no bloquear al usuario
+      return false;
+    }
   }
 
   recordGameResult(result: 'win' | 'loss' | 'draw', playerSymbol: 'X' | 'O'): void {
