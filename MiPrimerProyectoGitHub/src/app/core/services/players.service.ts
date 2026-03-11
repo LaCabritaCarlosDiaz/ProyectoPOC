@@ -1,5 +1,6 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Player, GameRecord } from '../models/player.types';
+import { LeaderboardSyncService } from './leaderboard-sync.service';
 
 const STORAGE_KEY = 'tic-tac-toe-players';
 const TOP_STORAGE_KEY = 'tic-tac-toe-top-snapshot';
@@ -22,6 +23,7 @@ export class PlayersService {
   readonly currentPlayerId = signal<string | null>(null);
   readonly gameHistory = signal<GameRecord[]>([]);
   readonly sharedLeaderboardLoaded = signal(false);
+  private readonly syncService = inject(LeaderboardSyncService);
 
   readonly currentPlayer = computed(() => {
     const id = this.currentPlayerId();
@@ -47,6 +49,7 @@ export class PlayersService {
   constructor() {
     this.loadFromLocalStorage();
     this.loadFromShareUrl();
+    this.loadFromFirestore();
   }
 
   createShareUrl(): string {
@@ -97,6 +100,14 @@ export class PlayersService {
     return Boolean(this.findPlayerByName(name));
   }
 
+  async isNameTakenAsync(name: string): Promise<boolean> {
+    const localFound = this.findPlayerByName(name);
+    if (localFound) return true;
+
+    const firebaseFound = await this.syncService.findPlayerByName(name);
+    return Boolean(firebaseFound);
+  }
+
   recordGameResult(result: 'win' | 'loss' | 'draw', playerSymbol: 'X' | 'O'): void {
     const playerId = this.currentPlayerId();
     if (!playerId) return;
@@ -135,6 +146,11 @@ export class PlayersService {
     this.gameHistory.set(history);
 
     this.saveToLocalStorage();
+    
+    // Guardar en Firestore también
+    this.syncService.saveOrUpdatePlayer(player).catch(e => 
+      console.error('Failed to save player to Firestore', e)
+    );
   }
 
   private findPlayerByName(name: string): string | undefined {
@@ -324,5 +340,23 @@ export class PlayersService {
     this.gameHistory.set([]);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(TOP_STORAGE_KEY);
+  }
+
+  private async loadFromFirestore(): Promise<void> {
+    try {
+      const topFromFirebase = await this.syncService.getTopPlayers(30);
+      if (topFromFirebase.length === 0) return;
+
+      // Fusionar datos de Firebase con los locales (locales prevalecen si existen)
+      const mergedMap = new Map(this.players());
+      for (const fbPlayer of topFromFirebase) {
+        if (!mergedMap.has(fbPlayer.id)) {
+          mergedMap.set(fbPlayer.id, fbPlayer);
+        }
+      }
+      this.players.set(mergedMap);
+    } catch (e) {
+      console.error('Error loading top from Firestore', e);
+    }
   }
 }
