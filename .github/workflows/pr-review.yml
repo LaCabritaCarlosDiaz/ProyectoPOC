@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -33,19 +33,19 @@ jobs:
         run: npm run build
 
       - name: Comment PR with results
-        if: always()
         uses: actions/github-script@v7
         with:
           script: |
-            const job = context.job;
-            let message = '✅ **Build verificado exitosamente**\n\n';
-            message += '- ✅ Dependencias instaladas\n';
-            message += '- ✅ Build de Angular completado\n';
-            message += '\n_Revisión automática completada_';
-            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: message
+              body: '✅ **Build verificado exitosamente**\n\n- ✅ Dependencias instaladas\n- ✅ Build de Angular completado\n\n_Revisión automática completada_'
             });
+
+      - name: Auto-merge PR if review passed
+        if: success()
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+        env:
+          GH_TOKEN: ${{ github.token }}
