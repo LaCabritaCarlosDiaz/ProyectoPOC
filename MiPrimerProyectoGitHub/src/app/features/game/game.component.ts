@@ -53,14 +53,16 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
   styles: [`
     :host {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
       min-height: 100vh;
       width: 100%;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      padding: 1rem;
+      padding: 1rem 1rem 2rem 1rem;
       box-sizing: border-box;
       overflow-x: hidden;
+      gap: 1.5rem;
     }
 
     /* Fade-in al cargar la app */
@@ -216,7 +218,8 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
 
     .leaderboard-section {
       width: 100%;
-      padding: 0 1rem 2rem 1rem;
+      max-width: 900px;
+      padding: 0;
       animation: fadeIn 0.5s ease 0.2s backwards;
     }
   `]

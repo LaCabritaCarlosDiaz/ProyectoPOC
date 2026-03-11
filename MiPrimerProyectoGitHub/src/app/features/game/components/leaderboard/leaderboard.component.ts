@@ -24,8 +24,9 @@ import { PlayersService } from '../../../../core/services/players.service';
                 <div class="ranking-row" [class.first]="i === 0">
                   <span class="medal">{{ getMedal(i) }}</span>
                   <span class="pname">{{ player.name }}</span>
-                  <span class="badge rating">{{ player.rating }}</span>
-                  <span class="badge wins">{{ player.score }}W</span>
+                  <span class="badge wins">{{ player.score }}V</span>
+                  <span class="badge draws">{{ player.draws }}E</span>
+                  <span class="badge losses">{{ player.losses }}D</span>
                 </div>
               }
             </div>
@@ -43,8 +44,9 @@ import { PlayersService } from '../../../../core/services/players.service';
                 <div class="ranking-row" [class.first]="i === 0">
                   <span class="medal">{{ i + 1 }}</span>
                   <span class="pname">{{ player.name }}</span>
-                  <span class="badge rating">{{ player.rating }}</span>
-                  <span class="badge losses">{{ player.losses }}P</span>
+                  <span class="badge wins">{{ player.score }}V</span>
+                  <span class="badge draws">{{ player.draws }}E</span>
+                  <span class="badge losses">{{ player.losses }}D</span>
                 </div>
               }
             </div>
@@ -54,7 +56,7 @@ import { PlayersService } from '../../../../core/services/players.service';
       </div>
 
       <div class="leaderboard-footer">
-        <p class="stats-info">💡 Rating = Ganadas×2 + Empatadas×1 − Perdidas×0.5</p>
+        <p class="stats-info">🟢 V = Victorias &nbsp;|&nbsp; 🟡 E = Empates &nbsp;|&nbsp; 🔴 D = Derrotas</p>
       </div>
     </div>
   `,
@@ -126,7 +128,7 @@ import { PlayersService } from '../../../../core/services/players.service';
       gap: 0.4rem;
     }
 
-    /* Fila: medalla | nombre (flexible) | badge rating | badge stat */
+    /* Fila: medalla | nombre (flexible) | badges de stats */
     .ranking-row {
       display: flex;
       align-items: center;
@@ -172,8 +174,8 @@ import { PlayersService } from '../../../../core/services/players.service';
       white-space: nowrap;
     }
 
-    .badge.rating { background: rgba(255, 165, 2, 0.15);  color: #ffa502; }
     .badge.wins   { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
+    .badge.draws  { background: rgba(255, 165, 2, 0.15);  color: #ffa502; }
     .badge.losses { background: rgba(233, 69, 96, 0.15);  color: #e94560; }
 
     .empty-message {
