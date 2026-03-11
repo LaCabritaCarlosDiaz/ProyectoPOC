@@ -2,11 +2,17 @@ import { Injectable, signal, computed } from '@angular/core';
 import { Player, GameRecord } from '../models/player.types';
 
 const STORAGE_KEY = 'tic-tac-toe-players';
+const TOP_STORAGE_KEY = 'tic-tac-toe-top-snapshot';
 const SHARE_PARAM_KEY = 'lb';
 const SHARE_VERSION = 1;
 
 interface LeaderboardSharePayload {
   v: number;
+  players: Player[];
+}
+
+interface TopSnapshotPayload {
+  updatedAt: number;
   players: Player[];
 }
 
@@ -156,19 +162,28 @@ export class PlayersService {
       gameHistory: this.gameHistory(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    this.saveTopSnapshot();
   }
 
   private loadFromLocalStorage(): void {
     const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return;
+    if (!data) {
+      this.loadTopSnapshotFallback();
+      return;
+    }
 
     try {
       const parsed = JSON.parse(data);
       this.players.set(new Map(parsed.players));
       // currentPlayerId siempre arranca en null → el form siempre pide el nombre
       this.gameHistory.set(parsed.gameHistory || []);
+
+      if (this.players().size === 0) {
+        this.loadTopSnapshotFallback();
+      }
     } catch (e) {
       console.error('Error loading players from localStorage', e);
+      this.loadTopSnapshotFallback();
     }
   }
 
@@ -198,9 +213,48 @@ export class PlayersService {
       this.currentPlayerId.set(null);
       this.gameHistory.set([]);
       this.sharedLeaderboardLoaded.set(true);
+      this.saveToLocalStorage();
     } catch (e) {
       console.error('Error loading shared leaderboard from URL', e);
     }
+  }
+
+  private saveTopSnapshot(): void {
+    const snapshot: TopSnapshotPayload = {
+      updatedAt: Date.now(),
+      players: this.getTopSnapshotPlayers(),
+    };
+    localStorage.setItem(TOP_STORAGE_KEY, JSON.stringify(snapshot));
+  }
+
+  private loadTopSnapshotFallback(): void {
+    const raw = localStorage.getItem(TOP_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as TopSnapshotPayload;
+      if (!Array.isArray(parsed.players)) return;
+
+      const snapshotPlayers = new Map<string, Player>();
+      for (const rawPlayer of parsed.players) {
+        const player = this.sanitizeSharedPlayer(rawPlayer);
+        if (player) {
+          snapshotPlayers.set(player.id, player);
+        }
+      }
+
+      if (snapshotPlayers.size > 0) {
+        this.players.set(snapshotPlayers);
+      }
+    } catch (e) {
+      console.error('Error loading top snapshot from localStorage', e);
+    }
+  }
+
+  private getTopSnapshotPlayers(): Player[] {
+    return Array.from(this.players().values())
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 30);
   }
 
   private sanitizeSharedPlayer(raw: unknown): Player | null {
@@ -269,5 +323,6 @@ export class PlayersService {
     this.currentPlayerId.set(null);
     this.gameHistory.set([]);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOP_STORAGE_KEY);
   }
 }
