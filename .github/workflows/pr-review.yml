@@ -4,10 +4,19 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
   pull-requests: write
+
+# Cancela runs anteriores del mismo PR si se hace un nuevo push
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   review:
@@ -43,9 +52,12 @@ jobs:
               body: '✅ **Build verificado exitosamente**\n\n- ✅ Dependencias instaladas\n- ✅ Build de Angular completado\n\n_Revisión automática completada_'
             });
 
-      - name: Auto-merge PR if review passed
+      # Habilita auto-merge en el PR (requiere "Allow auto-merge" activo en Settings).
+      # GitHub ejecutará el merge una vez que todos los checks requeridos pasen.
+      - name: Enable auto-merge
         if: success()
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --squash --delete-branch || echo "Auto-merge sin opción --auto"
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash --delete-branch \
+            || echo "Auto-merge ya activo o PR ya mergeado"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
