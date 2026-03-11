@@ -1,16 +1,9 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { GameComponent } from './features/game/game.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  template: `
-    <h1>Hello, {{ title() }}</h1>
-
-    <router-outlet />
-  `,
-  styles: [],
+  imports: [GameComponent],
+  template: `<app-game />`
 })
-export class App {
-  protected readonly title = signal('MiPrimerProyectoGitHub');
-}
+export class App {}
