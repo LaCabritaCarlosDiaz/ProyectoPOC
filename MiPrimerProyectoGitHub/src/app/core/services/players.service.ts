@@ -2,12 +2,20 @@ import { Injectable, signal, computed } from '@angular/core';
 import { Player, GameRecord } from '../models/player.types';
 
 const STORAGE_KEY = 'tic-tac-toe-players';
+const SHARE_PARAM_KEY = 'lb';
+const SHARE_VERSION = 1;
+
+interface LeaderboardSharePayload {
+  v: number;
+  players: Player[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class PlayersService {
   readonly players = signal<Map<string, Player>>(new Map());
   readonly currentPlayerId = signal<string | null>(null);
   readonly gameHistory = signal<GameRecord[]>([]);
+  readonly sharedLeaderboardLoaded = signal(false);
 
   readonly currentPlayer = computed(() => {
     const id = this.currentPlayerId();
@@ -32,6 +40,25 @@ export class PlayersService {
 
   constructor() {
     this.loadFromLocalStorage();
+    this.loadFromShareUrl();
+  }
+
+  createShareUrl(): string {
+    if (typeof window === 'undefined') return '';
+
+    const shareablePlayers = Array.from(this.players().values())
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 30);
+
+    const payload: LeaderboardSharePayload = {
+      v: SHARE_VERSION,
+      players: shareablePlayers,
+    };
+
+    const encoded = this.encodeSharePayload(payload);
+    const url = new URL(window.location.href);
+    url.searchParams.set(SHARE_PARAM_KEY, encoded);
+    return url.toString();
   }
 
   setCurrentPlayer(name: string): boolean {
@@ -143,6 +170,98 @@ export class PlayersService {
     } catch (e) {
       console.error('Error loading players from localStorage', e);
     }
+  }
+
+  private loadFromShareUrl(): void {
+    if (typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
+    const encodedPayload = url.searchParams.get(SHARE_PARAM_KEY);
+    if (!encodedPayload) return;
+
+    try {
+      const payload = this.decodeSharePayload(encodedPayload);
+      if (!payload || payload.v !== SHARE_VERSION || !Array.isArray(payload.players)) return;
+
+      const sharedPlayers = new Map<string, Player>();
+      for (const raw of payload.players) {
+        const player = this.sanitizeSharedPlayer(raw);
+        if (player) {
+          sharedPlayers.set(player.id, player);
+        }
+      }
+
+      if (sharedPlayers.size === 0) return;
+
+      // El ranking compartido prevalece para mostrar el mismo top entre usuarios.
+      this.players.set(sharedPlayers);
+      this.currentPlayerId.set(null);
+      this.gameHistory.set([]);
+      this.sharedLeaderboardLoaded.set(true);
+    } catch (e) {
+      console.error('Error loading shared leaderboard from URL', e);
+    }
+  }
+
+  private sanitizeSharedPlayer(raw: unknown): Player | null {
+    if (!raw || typeof raw !== 'object') return null;
+
+    const candidate = raw as Partial<Player>;
+    if (typeof candidate.id !== 'string' || typeof candidate.name !== 'string') return null;
+
+    const winsX = this.safeNumber(candidate.winsX);
+    const winsO = this.safeNumber(candidate.winsO);
+    const draws = this.safeNumber(candidate.draws);
+    const losses = this.safeNumber(candidate.losses);
+    const totalGames = this.safeNumber(candidate.totalGames);
+    const score = this.safeNumber(candidate.score);
+    const rating = this.safeNumber(candidate.rating);
+
+    return {
+      id: candidate.id,
+      name: this.normalizeName(candidate.name),
+      winsX,
+      winsO,
+      draws,
+      losses,
+      totalGames,
+      score,
+      rating,
+    };
+  }
+
+  private safeNumber(value: unknown): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  }
+
+  private encodeSharePayload(payload: LeaderboardSharePayload): string {
+    const json = JSON.stringify(payload);
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+
+    return btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+  }
+
+  private decodeSharePayload(encodedPayload: string): LeaderboardSharePayload | null {
+    const base64 = encodedPayload
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const paddedBase64 = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+
+    const binary = atob(paddedBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json) as LeaderboardSharePayload;
   }
 
   clearAllData(): void {

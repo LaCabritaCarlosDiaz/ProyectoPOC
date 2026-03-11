@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { PlayersService } from '../../../../core/services/players.service';
 
 @Component({
@@ -9,6 +9,17 @@ import { PlayersService } from '../../../../core/services/players.service';
       <div class="leaderboard-header">
         <h2 class="leaderboard-title">🏆 Ranking de Jugadores</h2>
         <p class="leaderboard-subtitle">Estadísticas acumuladas en esta app</p>
+        <div class="header-actions">
+          <button class="share-btn" (click)="copyShareUrl()" [disabled]="players.players().size === 0">
+            Compartir ranking
+          </button>
+          @if (players.sharedLeaderboardLoaded()) {
+            <span class="shared-pill">Vista compartida</span>
+          }
+        </div>
+        @if (shareMessage()) {
+          <p class="share-message">{{ shareMessage() }}</p>
+        }
       </div>
 
       <div class="rankings">
@@ -90,6 +101,57 @@ import { PlayersService } from '../../../../core/services/players.service';
       color: rgba(255, 255, 255, 0.5);
       font-size: 0.85rem;
       margin: 0;
+    }
+
+    .header-actions {
+      margin-top: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      border: 1px solid rgba(233, 69, 96, 0.5);
+      background: rgba(233, 69, 96, 0.12);
+      color: #ffd6dd;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.4px;
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .share-btn:hover:not(:disabled) {
+      background: rgba(233, 69, 96, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .share-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .shared-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      background: rgba(46, 213, 115, 0.13);
+      border: 1px solid rgba(46, 213, 115, 0.35);
+      color: #90f4ba;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .share-message {
+      margin: 0.5rem 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.8rem;
+      min-height: 1.2rem;
     }
 
     /* PC: 2 columnas; móvil: 1 columna cuando no caben */
@@ -207,8 +269,31 @@ import { PlayersService } from '../../../../core/services/players.service';
 })
 export class LeaderboardComponent {
   protected readonly players = inject(PlayersService);
+  protected readonly shareMessage = signal('');
 
   getMedal(index: number): string {
     return ['🥇', '🥈', '🥉', '4', '5'][index] ?? '•';
+  }
+
+  async copyShareUrl(): Promise<void> {
+    const shareUrl = this.players.createShareUrl();
+    if (!shareUrl) {
+      this.shareMessage.set('No se pudo generar el enlace.');
+      return;
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else if (typeof window !== 'undefined') {
+        window.prompt('Copia este enlace para compartir el ranking:', shareUrl);
+      }
+
+      this.shareMessage.set('Enlace copiado. Compartelo y veran este mismo ranking.');
+    } catch {
+      this.shareMessage.set('No se pudo copiar automaticamente. Usa este enlace en el navegador.');
+    }
+
+    setTimeout(() => this.shareMessage.set(''), 3000);
   }
 }
