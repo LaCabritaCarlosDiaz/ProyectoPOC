@@ -52,18 +52,6 @@ jobs:
               body: '✅ **Build verificado exitosamente**\n\n- ✅ Dependencias instaladas\n- ✅ Build de Angular completado\n\n_Revisión automática completada_'
             });
 
-      - name: Approve PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              event: 'APPROVE',
-              body: '✅ Build exitoso — aprobado automáticamente.'
-            });
-
       - name: Merge PR
         if: success()
         run: |
