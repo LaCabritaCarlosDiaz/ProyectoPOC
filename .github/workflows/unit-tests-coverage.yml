@@ -1,13 +1,7 @@
 name: Unit Tests Coverage
 
 on:
-  push:
-    branches:
-      - main
-      - feature/**
-  pull_request:
-    branches:
-      - main
+  workflow_call:
 
 jobs:
   test-coverage:
