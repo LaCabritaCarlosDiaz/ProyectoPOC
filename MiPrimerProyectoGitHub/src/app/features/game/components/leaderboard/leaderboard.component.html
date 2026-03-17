@@ -1,0 +1,61 @@
+<div class="leaderboard-container">
+  <div class="leaderboard-header">
+    <h2 class="leaderboard-title">🏆 Ranking de Jugadores</h2>
+    <p class="leaderboard-subtitle">Estadísticas acumuladas en esta app</p>
+    <div class="header-actions">
+      <button class="share-btn" (click)="copyShareUrl()" [disabled]="players.players().size === 0">
+        Compartir ranking
+      </button>
+      @if (players.sharedLeaderboardLoaded()) {
+        <span class="shared-pill">Vista compartida</span>
+      }
+    </div>
+    @if (shareMessage()) {
+      <p class="share-message">{{ shareMessage() }}</p>
+    }
+  </div>
+
+  <div class="rankings">
+    <div class="ranking-section top">
+      <h3 class="ranking-title">⭐ Top 5 Mejores</h3>
+      @if (players.topPlayers().length === 0) {
+        <p class="empty-message">Sin jugadores aún</p>
+      } @else {
+        <div class="ranking-list">
+          @for (player of players.topPlayers(); track player.id; let i = $index) {
+            <div class="ranking-row" [class.first]="i === 0">
+              <span class="medal">{{ getMedal(i) }}</span>
+              <span class="pname">{{ player.name }}</span>
+              <span class="badge wins">{{ player.score }}V</span>
+              <span class="badge draws">{{ player.draws }}E</span>
+              <span class="badge losses">{{ player.losses }}D</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="ranking-section bottom">
+      <h3 class="ranking-title">📉 Top Peores</h3>
+      @if (players.worstPlayers().length === 0) {
+        <p class="empty-message">Mínimo 3 partidas para aparecer</p>
+      } @else {
+        <div class="ranking-list">
+          @for (player of players.worstPlayers(); track player.id; let i = $index) {
+            <div class="ranking-row" [class.first]="i === 0">
+              <span class="medal">{{ i + 1 }}</span>
+              <span class="pname">{{ player.name }}</span>
+              <span class="badge wins">{{ player.score }}V</span>
+              <span class="badge draws">{{ player.draws }}E</span>
+              <span class="badge losses">{{ player.losses }}D</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="leaderboard-footer">
+    <p class="stats-info">🟢 V = Victorias &nbsp;|&nbsp; 🟡 E = Empates &nbsp;|&nbsp; 🔴 D = Derrotas</p>
+  </div>
+</div>

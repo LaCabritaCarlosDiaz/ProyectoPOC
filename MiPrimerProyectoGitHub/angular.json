@@ -12,28 +12,28 @@
         "@schematics/angular:component": {
           "inlineTemplate": true,
           "inlineStyle": true,
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:class": {
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:directive": {
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:guard": {
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:interceptor": {
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:pipe": {
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:resolver": {
-          "skipTests": true
+          "skipTests": false
         },
         "@schematics/angular:service": {
-          "skipTests": true
+          "skipTests": false
         }
       },
       "root": "",
@@ -90,6 +90,34 @@
             }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "tsconfig.spec.json",
+            "buildTarget": "MiPrimerProyectoGitHub:build:development",
+            "runner": "vitest",
+            "include": [
+              "src/**/*.spec.ts"
+            ],
+            "coverage": false,
+            "coverageReporters": [
+              "text-summary",
+              "lcov"
+            ],
+            "coverageThresholds": {
+              "statements": 30,
+              "branches": 25,
+              "functions": 30,
+              "lines": 30
+            },
+            "coverageExclude": [
+              "src/**/*.routes.ts",
+              "src/**/*.config.ts",
+              "src/**/*.types.ts",
+              "src/app/core/services/leaderboard-sync.service.ts"
+            ]
+          }
         }
       }
     }

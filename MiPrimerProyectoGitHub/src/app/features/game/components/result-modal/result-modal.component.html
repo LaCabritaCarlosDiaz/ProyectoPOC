@@ -1,0 +1,17 @@
+@if (game.gameOver() && game.resultConfirmed()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2 class="modal-title" [class]="'status-' + game.statusModifier()">
+        {{ getTitleEmoji() }} {{ getTitleText() }}
+      </h2>
+
+      <p class="modal-message">
+        {{ game.statusMessage() }}
+      </p>
+
+      <button class="modal-btn" (click)="closeModal()">
+        🎮 Siguiente ronda
+      </button>
+    </div>
+  </div>
+}

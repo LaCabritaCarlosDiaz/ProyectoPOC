@@ -1,0 +1,29 @@
+<div class="mode-selector">
+  <button class="mode-btn" [class.active]="game.vsComputer()" (click)="game.setMode(true)">
+    🤖 vs Máquina
+  </button>
+  <button class="mode-btn" [class.active]="!game.vsComputer()" (click)="game.setMode(false)">
+    👥 2 Jugadores
+  </button>
+</div>
+
+<div class="difficulty-selector" [class.hidden]="!game.vsComputer()">
+  <span class="diff-label">Dificultad:</span>
+  <button class="diff-btn" [class.active]="game.difficulty() === 'easy'" (click)="game.setDifficulty('easy')">
+    😊 Fácil
+  </button>
+  <button class="diff-btn" [class.active]="game.difficulty() === 'hard'" (click)="game.setDifficulty('hard')">
+    😈 Difícil
+  </button>
+</div>
+
+<div class="controls">
+  <button class="btn btn-restart" (click)="game.restartRound()">
+    🔄 Nueva partida
+  </button>
+  <button class="btn btn-reset" (click)="game.resetAll()">
+    🗑️ Reiniciar todo
+  </button>
+</div>
+
+<p class="round-info">Ronda {{ game.round() }}</p>
