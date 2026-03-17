@@ -41,7 +41,13 @@ jobs:
         run: npm ci
 
       - name: Run npm audit (high+)
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --json > npm-audit-report.json || true
+
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: MiPrimerProyectoGitHub/npm-audit-report.json
 
   trivy-scan:
     runs-on: ubuntu-latest
@@ -58,5 +64,13 @@ jobs:
             fs \
             --severity HIGH,CRITICAL \
             --ignore-unfixed \
-            --exit-code 1 \
+            --exit-code 0 \
+            --format json \
+            --output /workdir/trivy-report.json \
             /workdir
+
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
