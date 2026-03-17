@@ -1,6 +1,14 @@
 name: PR Review
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   pull_request_review:
     types:
       - submitted
@@ -14,61 +22,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  review-gate:
-    if: github.event.review.state == 'approved'
+  tests:
+    uses: ./.github/workflows/unit-tests-coverage.yml
+
+  security:
+    uses: ./.github/workflows/sonar-security-analysis.yml
+
+  finalize:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: MiPrimerProyectoGitHub
-
+    needs:
+      - tests
+      - security
+    if: ${{ always() }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: MiPrimerProyectoGitHub/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm run test
-
-      - name: Run coverage tests
-        run: npm run test:coverage
-
-      - name: Run npm audit report (non-blocking)
-        run: npm audit --audit-level=high --json > npm-audit-report.json || true
-
-      - name: Run Trivy report (non-blocking)
-        run: |
-          docker run --rm \
-            -v "$PWD":/workdir \
-            aquasec/trivy:0.57.1 \
-            fs \
-            --severity HIGH,CRITICAL \
-            --ignore-unfixed \
-            --exit-code 0 \
-            --format json \
-            --output /workdir/trivy-report.json \
-            /workdir
-
-      - name: Upload security reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-review-security-reports
-          path: |
-            MiPrimerProyectoGitHub/npm-audit-report.json
-            MiPrimerProyectoGitHub/trivy-report.json
-
       - name: Comment PR with results
+        if: ${{ needs.tests.result == 'success' && needs.security.result == 'success' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -76,12 +44,18 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '✅ **PR review gate completado**\n\n- ✅ Tests unitarios ejecutados\n- ✅ Cobertura ejecutada\n- ✅ Analisis de seguridad generado (npm audit + Trivy)\n\nSe adjuntaron reportes como artifacts del run.'
+              body: '✅ **PR review gate completado**\n\n- ✅ Tests unitarios/cobertura ejecutados\n- ✅ Analisis de seguridad ejecutado\n\nLos reportes están disponibles como artifacts en los workflows hijos.'
             });
 
       - name: Approve PR
-        if: success()
+        if: ${{ needs.tests.result == 'success' && needs.security.result == 'success' && github.event_name == 'pull_request_review' && github.event.review.state == 'approved' }}
         run: |
-          gh pr review ${{ github.event.pull_request.number }} --approve --body "Aprobado automaticamente: tests y analisis de seguridad ejecutados correctamente."
+          gh pr review ${{ github.event.pull_request.number }} --approve --body "Aprobado automaticamente: gate de tests y seguridad exitoso."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail when gate fails
+        if: ${{ needs.tests.result != 'success' || needs.security.result != 'success' }}
+        run: |
+          echo "PR review gate failed"
+          exit 1
