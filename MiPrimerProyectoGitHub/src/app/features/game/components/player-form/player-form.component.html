@@ -1,0 +1,36 @@
+<div class="modal-overlay">
+  <div class="modal-content">
+    <h2 class="modal-title">🎮 Bienvenido a Tic-Tac-Toe</h2>
+
+    <p class="modal-subtitle">Ingresa tu nombre para comenzar</p>
+
+    <form (ngSubmit)="onSubmit()" class="form">
+      <div class="form-group">
+        <input
+          type="text"
+          [ngModel]="playerName()"
+          (ngModelChange)="onNameChange($event)"
+          name="playerName"
+          class="input-field"
+          placeholder="Tu nombre"
+          required
+          autofocus
+          (keyup.enter)="onSubmit()">
+        @if (errorMessage()) {
+          <p class="form-error">{{ errorMessage() }}</p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-submit"
+        [disabled]="!playerName().trim() || playersService.isNameTaken(playerName()) || isValidating()">
+        {{ isValidating() ? '⏳ Validando...' : '▶ Jugar' }}
+      </button>
+    </form>
+
+    <p class="modal-hint">
+      El nombre debe ser unico. Si ya existe, elige otro.
+    </p>
+  </div>
+</div>

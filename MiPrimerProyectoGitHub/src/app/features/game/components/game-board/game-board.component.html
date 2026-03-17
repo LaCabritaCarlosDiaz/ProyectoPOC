@@ -1,0 +1,14 @@
+<div class="board" [class.thinking]="game.isMachineThinking()">
+  @for (cell of game.board(); track $index) {
+    <button
+      class="cell"
+      [class.cell-x]="cell === 'X'"
+      [class.cell-o]="cell === 'O'"
+      [class.cell-winning]="game.winningCells().includes($index)"
+      [disabled]="cell !== null || game.gameOver() || game.isMachineThinking()"
+      [attr.aria-label]="'Celda ' + ($index + 1) + (cell ? ', ' + cell : ', vacía')"
+      (click)="game.makeMove($index)">
+      {{ cell }}
+    </button>
+  }
+</div>

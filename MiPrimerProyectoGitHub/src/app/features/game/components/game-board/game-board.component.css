@@ -1,0 +1,81 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  transition: opacity 0.2s ease;
+}
+
+.board.thinking { opacity: 0.6; }
+
+.cell {
+  aspect-ratio: 1;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 14px;
+  font-size: clamp(1.8rem, 9vw, 3.2rem);
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  min-height: 60px;
+  padding: 0;
+}
+
+.cell:not(:disabled):hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.4);
+  transform: scale(1.05);
+}
+
+.cell:disabled { cursor: not-allowed; }
+
+.cell-x {
+  color: #e94560;
+  border-color: rgba(233, 69, 96, 0.4);
+  text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+  animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cell-o {
+  color: #0f9af0;
+  border-color: rgba(15, 154, 240, 0.4);
+  text-shadow: 0 0 10px rgba(15, 154, 240, 0.5);
+  animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cell-winning {
+  background: rgba(46, 213, 115, 0.2) !important;
+  border-color: #2ed573 !important;
+  box-shadow: 0 0 20px rgba(46, 213, 115, 0.4);
+  animation: pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0.5); opacity: 0.3; }
+  70%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+
+@media (min-width: 700px) {
+  .cell { font-size: clamp(2rem, 5vw, 3rem); }
+}
+
+@media (hover: none) {
+  .cell:not(:disabled):hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.15);
+    transform: none;
+  }
+}
